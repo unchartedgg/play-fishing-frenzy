@@ -5,41 +5,105 @@
 [![Tools](https://img.shields.io/badge/MCP_tools-36-purple.svg)](#what-the-agent-can-do)
 [![Fishing Frenzy](https://img.shields.io/badge/game-Fishing_Frenzy-orange.svg)](https://fishingfrenzy.co)
 
-An AI agent that plays [Fishing Frenzy](https://fishingfrenzy.co) autonomously via Claude Code. Install the skill, run `/play`, and your agent handles fishing, selling, cooking, quests, diving, and equipment management.
+An AI agent that plays [Fishing Frenzy](https://fishingfrenzy.co) autonomously. Works with any AI tool that supports [MCP](https://modelcontextprotocol.io) — Claude Code, Cursor, Cline, Windsurf, OpenClaw, and more. Install, run `/play`, and your agent handles fishing, selling, cooking, quests, diving, and equipment management.
 
 **The meta-game**: Customize the strategy in `SKILL.md` to optimize your agent's decision-making. Same tools, different strategies.
 
 ## Install
 
-### Option A: Skills CLI (Recommended)
+### Step 1: Get the code + dependencies
 
 ```bash
 npx skills add wearedayone/fishing-frenzy-agent --all --global -y
-bash ~/.claude/skills/play/scripts/setup.sh
+pip3 install -r ~/.agents/skills/play/requirements.txt
 ```
 
-### Option B: Clone
+This installs the skill to every detected AI agent (Claude Code, Cursor, Cline, etc.) and installs Python dependencies.
 
-```bash
-git clone https://github.com/wearedayone/fishing-frenzy-agent
-cd fishing-frenzy-agent
-bash scripts/setup.sh
-```
-
-### Option C: Manual
+<details>
+<summary>Alternative: clone manually</summary>
 
 ```bash
 git clone https://github.com/wearedayone/fishing-frenzy-agent
 cd fishing-frenzy-agent
 pip3 install -r requirements.txt
-claude mcp add fishing-frenzy -- python3 "$(pwd)/ff_agent/server.py"
+```
+</details>
+
+### Step 2: Register the MCP server for your tool
+
+The agent uses an MCP server that exposes 36 game tools. Register it with your AI tool:
+
+#### Claude Code
+
+```bash
+claude mcp add fishing-frenzy -- python3 ~/.agents/skills/play/ff_agent/server.py
 ```
 
-Restart Claude Code after any install method.
+Or run the setup script (does the above + lets you pick a strategy):
+
+```bash
+bash ~/.claude/skills/play/scripts/setup.sh
+```
+
+#### Cursor
+
+Go to **Cursor Settings > MCP** and add:
+
+```json
+{
+  "fishing-frenzy": {
+    "command": "python3",
+    "args": ["~/.agents/skills/play/ff_agent/server.py"]
+  }
+}
+```
+
+#### Cline
+
+Add to your MCP settings (`.cline/mcp_settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "fishing-frenzy": {
+      "command": "python3",
+      "args": ["~/.agents/skills/play/ff_agent/server.py"]
+    }
+  }
+}
+```
+
+#### Windsurf
+
+Add to your MCP config in Windsurf settings:
+
+```json
+{
+  "fishing-frenzy": {
+    "command": "python3",
+    "args": ["~/.agents/skills/play/ff_agent/server.py"]
+  }
+}
+```
+
+#### OpenClaw
+
+```bash
+openclaw mcp set fishing-frenzy '{"command":"python3","args":["~/.agents/skills/play/ff_agent/server.py"]}'
+```
+
+#### Any other MCP-compatible tool
+
+Point it at the server: `python3 ~/.agents/skills/play/ff_agent/server.py` (stdio transport).
+
+---
+
+Restart your tool after registering. If you cloned instead of using `npx skills`, replace `~/.agents/skills/play/` with your clone path.
 
 ## Play
 
-Open Claude Code and type:
+Open your AI tool and type:
 
 ```
 /play
@@ -135,7 +199,7 @@ fishing-frenzy-agent/
 └── LICENSE                   ← MIT
 ```
 
-**SKILL.md** teaches Claude how to play — the game loop, decision framework, and strategy templates. Edit this file to change how your agent plays.
+**SKILL.md** teaches your AI agent how to play — the game loop, decision framework, and strategy templates. Edit this file to change how your agent plays.
 
 **MCP Server** (`ff_agent/server.py`) exposes game actions as tools that Claude calls autonomously.
 
@@ -161,7 +225,7 @@ All data is stored locally at `~/.fishing-frenzy-agent/`:
 ## Requirements
 
 - Python 3.10+
-- [Claude Code](https://claude.ai/claude-code)
+- Any MCP-compatible AI tool ([Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview), [Cursor](https://cursor.com), [Cline](https://cline.bot), [Windsurf](https://windsurf.com), [OpenClaw](https://github.com/openclaw/openclaw), etc.)
 
 ## License
 
