@@ -152,11 +152,12 @@ async def _dive_session_async(token: str, max_picks: int = 0) -> dict:
 def _get_board_size(board_data: dict) -> tuple[int, int]:
     """Extract board dimensions from init_diving data.
 
+    Returns (cols, rows). The server uses totalCol / totalRow keys.
     Falls back to 5x5 if dimensions can't be determined.
     """
-    # Try common field names for board dimensions
-    cols = board_data.get("cols") or board_data.get("width") or board_data.get("col")
-    rows = board_data.get("rows") or board_data.get("height") or board_data.get("row")
+    # Server sends totalRow and totalCol
+    cols = board_data.get("totalCol") or board_data.get("cols") or board_data.get("width")
+    rows = board_data.get("totalRow") or board_data.get("rows") or board_data.get("height")
 
     if cols and rows:
         return (int(cols), int(rows))
