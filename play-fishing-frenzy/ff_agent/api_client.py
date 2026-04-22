@@ -1,9 +1,16 @@
-"""REST API client for Fishing Frenzy with auto-auth-refresh."""
+"""REST API client for Fishing Frenzy with auto-auth-refresh and transient retry."""
+
+import time
 
 import httpx
 from . import auth
 
 BASE_URL = "https://api.fishingfrenzy.co/v1"
+
+# Retry configuration
+MAX_RETRIES = 3
+RETRYABLE_STATUS_CODES = {502, 503, 504}
+BASE_BACKOFF_SECONDS = 1  # 1s, 2s, 4s exponential
 
 
 def _headers() -> dict:
@@ -13,23 +20,89 @@ def _headers() -> dict:
         "Content-Type": "application/json",
         "Origin": "https://fishingfrenzy.co",
         "Referer": "https://fishingfrenzy.co/",
+        "User-Agent": f"fishing-frenzy-agent/{auth.AGENT_VERSION}",
     }
 
 
-def _request(method: str, path: str, **kwargs) -> dict:
-    """Make an authenticated request with auto-retry on 401."""
-    with httpx.Client(timeout=15) as client:
-        resp = client.request(
-            method, f"{BASE_URL}{path}", headers=_headers(), **kwargs
-        )
-        if resp.status_code == 401:
-            auth.login()
-            resp = client.request(
-                method, f"{BASE_URL}{path}", headers=_headers(), **kwargs
-            )
-        # Return the JSON response even for 4xx errors (game API uses 400 for
-        # business logic like "already claimed" or "not enough energy")
-        return resp.json()
+def _is_retryable_error(exc: Exception) -> bool:
+    """Check if an exception is a transient/retryable error."""
+    return isinstance(exc, (
+        httpx.ConnectError,
+        httpx.ConnectTimeout,
+        httpx.ReadTimeout,
+        httpx.WriteTimeout,
+        httpx.PoolTimeout,
+        httpx.TimeoutException,
+        ConnectionError,
+        OSError,
+    ))
+
+
+def _request(method: str, path: str, max_retries: int = MAX_RETRIES, **kwargs) -> dict:
+    """Make an authenticated request with auto-retry on 401 and transient errors.
+
+    Retries with exponential backoff (1s, 2s, 4s) on:
+    - Connection errors and timeouts
+    - HTTP 502, 503, 504 (server/gateway errors)
+
+    Does NOT retry on 4xx client errors (except 401 which triggers re-auth).
+
+    Args:
+        method: HTTP method (GET, POST, etc.).
+        path: API path (appended to BASE_URL).
+        max_retries: Maximum retry attempts for transient errors (default 3).
+        **kwargs: Additional arguments passed to httpx.Client.request.
+    """
+    retries_used = 0
+    last_exception = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            with httpx.Client(timeout=15) as client:
+                resp = client.request(
+                    method, f"{BASE_URL}{path}", headers=_headers(), **kwargs
+                )
+
+                # Auto re-auth on 401
+                if resp.status_code == 401:
+                    auth.login()
+                    resp = client.request(
+                        method, f"{BASE_URL}{path}", headers=_headers(), **kwargs
+                    )
+
+                # Retry on transient server errors (502/503/504)
+                if resp.status_code in RETRYABLE_STATUS_CODES and attempt < max_retries:
+                    retries_used = attempt + 1
+                    backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                    time.sleep(backoff)
+                    continue
+
+                # Return the JSON response even for 4xx errors (game API uses 400 for
+                # business logic like "already claimed" or "not enough energy")
+                result = resp.json()
+
+                # Annotate with retry info if retries were used
+                if retries_used > 0 and isinstance(result, dict):
+                    result["_retries"] = retries_used
+
+                return result
+
+        except Exception as exc:
+            last_exception = exc
+            if _is_retryable_error(exc) and attempt < max_retries:
+                retries_used = attempt + 1
+                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                time.sleep(backoff)
+                continue
+            # Non-retryable or out of retries — re-raise
+            raise
+
+    # If we exhausted all retries on server errors (502/503/504), return the last response
+    # This path is reached when the loop ends after all retries with server errors
+    result = resp.json()
+    if isinstance(result, dict):
+        result["_retries"] = retries_used
+    return result
 
 
 # --- Profile ---
@@ -147,8 +220,9 @@ def verify_social_quest(quest_id: str) -> dict:
 
 
 def spin_daily_wheel() -> dict:
-    """Spin the daily quest wheel."""
-    return _request("POST", "/user-quests/daily-quest/wheel/spin")
+    """Spin the free daily quest wheel."""
+    return _request("POST", "/user-quests/daily-quest/wheel/spin",
+                    json={"wheelType": "Free"})
 
 
 # --- Equipment ---
