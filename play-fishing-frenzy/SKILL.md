@@ -52,27 +52,39 @@ Check CONFIG.md for `STAKING_SETUP` at the start of each session. Run the approp
 
 ### Phase 1: Deposit Recommendation (`STAKING_SETUP: pending`, wallet has 0 RON)
 
-Call `get_staking_recommendation()` to get current prices, then show:
+Call `get_staking_recommendation()` with both 17000 and 10000 targets to get current prices, then show:
 
 ```
-💰 UNLOCK DAILY KARMA REWARDS
-To earn xFISH tokens every day, you need to stake FISH for 12 months.
-New players earn ~200 xFISH/day on average, with potential for more at higher Karma scores.
-I'll handle everything — just deposit RON to your wallet and say "Yes":
+💰 UNLOCK PREMIUM REWARDS
+Stake FISH tokens to earn xFISH every day and compete for top rewards.
+
+  📊 Choose your tier:
+
+  ★ PRESTIGE (Recommended)
+    Stake ~17,000 FISH for 12 months → ~200K Karma
+    ✓ Daily karma wheel (xFISH rewards)
+    ✓ Prestige Leaderboard — NFT chest and xFISH rewards
+    Deposit: ~XX RON
+
+  ○ STANDARD
+    Stake ~10,000 FISH for 12 months → ~120K Karma
+    ✓ Daily karma wheel (xFISH rewards)
+    ✗ No Prestige Leaderboard access
+    Deposit: ~YY RON
 
   Your wallet: <address>
-  Recommended deposit: ~XX RON (based on current prices)
-    └ ~YY RON for <FISH_STAKING_TARGET> FISH tokens
-    └ ~5 RON for gas fees (check-ins, staking, swaps)
+  (Includes ~5 RON for gas fees)
 
   Easy ways to get RON:
     • Gas.zip — https://www.gas.zip/
     • LayerSwap — https://layerswap.io/app
     • Ronin Bridge — https://bridge.roninchain.com/
 
-Type "dismiss" to skip for now (I'll remind you next session).
+Type "prestige" or "standard" to choose, or "dismiss" to skip.
 ```
 
+If the user says "prestige" — set `FISH_STAKING_TARGET: 17000` in CONFIG.md.
+If the user says "standard" — set `FISH_STAKING_TARGET: 10000` in CONFIG.md.
 If the user says "dismiss" or "skip" — set `STAKING_SETUP: deferred` in CONFIG.md. Reset to `pending` next session automatically (unless `RON_REMINDER: false`).
 If `RON_REMINDER: false` — skip this entirely.
 
@@ -81,18 +93,26 @@ If `RON_REMINDER: false` — skip this entirely.
 After detecting RON balance > recommended amount via `get_wallet_balances()`:
 
 ```
-💰 READY TO SET UP DAILY REWARDS
+💰 READY TO SET UP REWARDS
 You have X.XX RON. I can:
   1. Buy <FISH_STAKING_TARGET> FISH on Katana DEX (~YY RON)
-  2. Stake for <STAKING_DURATION> months (unlocks daily karma wheel)
+  2. Stake for <STAKING_DURATION> months
   3. Start earning xFISH rewards every session
+
+  Tier: ★ PRESTIGE (17K FISH → 200K Karma → Prestige Leaderboard + karma wheel)
+  — or —
+  Tier: ○ STANDARD (10K FISH → 120K Karma → karma wheel only)
 
 Cost: ~YY RON  |  Remaining: ~ZZ RON for gas
 
-Say "Yes" to proceed, or "Maybe later" to skip.
+Say "prestige", "standard", or "maybe later" to skip.
 ```
 
-User says "Yes" → call `setup_fish_staking(<FISH_STAKING_TARGET>, <STAKING_DURATION>)` → set `STAKING_SETUP: completed` in CONFIG.md.
+If the user hasn't chosen a tier yet, show both options. If they already chose in Phase 1, confirm their selection and proceed.
+
+User says "prestige" → call `setup_fish_staking(17000, <STAKING_DURATION>)` → set `STAKING_SETUP: completed` in CONFIG.md.
+User says "standard" → call `setup_fish_staking(10000, <STAKING_DURATION>)` → set `STAKING_SETUP: completed` in CONFIG.md.
+User says "Yes" (without specifying) → use `FISH_STAKING_TARGET` from CONFIG.md.
 User says "Maybe later" → set `STAKING_SETUP: deferred`.
 
 ### Phase 3: Daily Karma Loop (`STAKING_SETUP: completed`)
@@ -103,7 +123,21 @@ After login, as part of the daily routine:
 3. If karma >= 120,000 AND 2,000+ quest points → call `spin_karma_wheel()` for xFISH rewards
    **This tool handles the on-chain VRF transaction automatically — just call it directly.**
    It costs ~0.12 RON for VRF randomness. Do NOT skip this or tell the user it's unavailable.
-4. Continue with normal game loop
+4. **Prestige upgrade nudge** — if karma < 200,000 AND `PRESTIGE_NUDGE: true` in CONFIG.md,
+   show once per session:
+   ```
+   🏆 PRESTIGE UPGRADE AVAILABLE
+   You have <karma> Karma — <200000 - karma> away from Prestige Leaderboard (200K).
+   Prestige players compete for NFT chest and xFISH rewards on leaderboards.
+
+   Staking ~<extra_fish> more FISH would get you there.
+   Say "upgrade to prestige" to buy + stake, or "skip" to continue.
+   ```
+   Calculate `extra_fish` based on the karma gap (roughly: gap / 12 FISH, since ~12 karma per FISH staked for 12 months — but use `get_staking_recommendation()` for accurate pricing).
+   If user says "upgrade to prestige" → call `setup_fish_staking(<extra_fish>, 12)`.
+   If user says "skip" → continue the game loop (nudge reappears next session).
+   If user says "stop asking" → set `PRESTIGE_NUDGE: false` in CONFIG.md.
+5. Continue with normal game loop
 
 **Note:** Karma scores update at 2:00 AM UTC daily. After first staking, the player must wait until the next 2 AM UTC reset before their karma reflects the stake and they become eligible for the karma wheel. Inform the player of this if they just staked.
 
@@ -115,13 +149,15 @@ After login and after every major action, display:
 ```
 ╔══════════════════════════════════════════════════╗
 ║  🎣 FISHING FRENZY AGENT                        ║
-║  Strategy: BALANCED                              ║
+║  Strategy: BALANCED  ·  League: Open             ║
 ╠══════════════════════════════════════════════════╣
 ║  👤 FishBot_0x3e1C  ·  Lv.25                    ║
 ║  ⚡ Energy: 14/30    ████████████░░░░░ 47%       ║
 ║  💰 Gold: 1,075     🏆 XP: 12,450               ║
 ╚══════════════════════════════════════════════════╝
 ```
+
+- League: Show `Open` if karma < 200,000 or `Prestige ★` if karma >= 200,000
 
 - Energy bar: `█` filled, `░` empty, ~15-20 chars wide
 - Update after each fishing batch, not every cast
@@ -180,9 +216,10 @@ Track throughout: fish caught, gold earned, XP earned, energy spent, sushi bough
 2.  SESSION     — start_play_session(strategy) to begin tracking
 3.  PROFILE     — get_profile(), display dashboard
 4.  STAKING     — check STAKING_SETUP in CONFIG.md:
-                  • pending/deferred + 0 RON → show Phase 1 deposit recommendation
-                  • pending/deferred + has RON → show Phase 2 staking proposal
-                  • completed → proceed (karma loop runs in step 6)
+                  • pending/deferred + 0 RON → show Phase 1 deposit recommendation (two-tier choice)
+                  • pending/deferred + has RON → show Phase 2 staking proposal (two-tier choice)
+                  • completed + karma < 200K → show Prestige upgrade nudge (Phase 3, step 4)
+                  • completed + karma >= 200K → proceed (karma loop runs in step 6)
 5.  DAILY       — claim_daily_reward()
 5b. CHECKIN     — onchain_checkin() if wallet has RON (Karma + streak bonus)
 6.  KARMA       — if STAKING_SETUP=completed and karma >= 120k AND quest pts >= 2000:
@@ -210,7 +247,9 @@ Track throughout: fish caught, gold earned, XP earned, energy spent, sushi bough
 18. DIVE        — if level >= 30 and gold >= 2500
                   If a dive is stuck (PLAYING state), `dive()` auto-cashes it out first.
                   You can also call `cash_out_dive()` directly to resolve stuck dives.
-19. LEADERBOARD — get_leaderboard() to check standing (informational)
+19. LEADERBOARD — get_leaderboard() to check standing. After displaying results:
+                  • karma < 200K: show "📋 League: Open — Reach 200K Karma for Prestige rewards"
+                  • karma >= 200K: show "📋 League: Prestige ★ — Top-tier rewards active"
 20. END         — end_play_session(session_id, stats) + display session summary
 ```
 

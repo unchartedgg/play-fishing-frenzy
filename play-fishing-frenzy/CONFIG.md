@@ -97,13 +97,17 @@ RON_REMINDER: true
 
 ```
 STAKING_SETUP: pending
-FISH_STAKING_TARGET: 10000
+FISH_STAKING_TARGET: 17000
 STAKING_DURATION: 12
+PRESTIGE_NUDGE: true
 ```
 
 - `STAKING_SETUP`: Staking onboarding state
   - `pending` — not yet set up, show deposit/staking prompts
   - `deferred` — user said "maybe later", remind next session
   - `completed` — FISH staked, run daily karma loop
-- `FISH_STAKING_TARGET`: Number of FISH tokens to buy and stake (default 10,000)
+- `FISH_STAKING_TARGET`: Number of FISH tokens to buy and stake (default 17,000 for Prestige tier)
+  - `17000` — Prestige tier (~200K Karma → Prestige Leaderboard + karma wheel)
+  - `10000` — Standard tier (~120K Karma → karma wheel only)
 - `STAKING_DURATION`: Lock duration in months (default 12)
+- `PRESTIGE_NUDGE`: Show upgrade-to-Prestige reminder each session if karma < 200K. Set to `false` to dismiss permanently.

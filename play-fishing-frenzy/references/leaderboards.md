@@ -9,11 +9,14 @@ Weekly competitions where players compete in fishing and cooking. Rewards includ
 ### Prestige Leaderboard
 - **Requirement**: 200,000+ Karma at the **start** of the leaderboard period
 - Players who reach 200k Karma mid-period stay in Open for that cycle
-- Higher-tier rewards
+- **Rewards**: NFT chests and xFISH rewards — significantly better than Open tier
+- **How to qualify**: Stake ~17,000 FISH for 12 months to reach ~200K Karma
+- The agent should recommend Prestige tier during staking onboarding
 
 ### Open Leaderboard
 - Available to all players
 - No Karma requirement
+- Standard rewards — lower tier than Prestige
 
 ## Weekly Reset
 
@@ -33,6 +36,7 @@ Weekly competitions where players compete in fishing and cooking. Rewards includ
 2. Focus fishing/cooking effort during the week to climb rankings
 3. After weekly reset, check for chest rewards in inventory
 4. Leaderboard chests need minting (currently not automatable by agent)
+5. **Prestige upgrade**: If karma < 200K, the agent should nudge players to stake more FISH to unlock Prestige tier for better weekly rewards
 
 ## Tools
 

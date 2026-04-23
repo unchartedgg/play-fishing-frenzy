@@ -24,10 +24,12 @@ Karma determines access to game features. Earned through:
 6. Game Karma (gameplay-based formula)
 
 ### Karma Thresholds
-| Threshold | Unlocks |
-|-----------|---------|
-| 120,000 | Daily Karma wheel (xFISH rewards) |
-| 200,000 | Prestige Leaderboard eligibility |
+| Threshold | Unlocks | How to reach |
+|-----------|---------|--------------|
+| 120,000 | Daily Karma wheel (xFISH rewards) | Stake ~10,000 FISH for 12 months |
+| 200,000 | Prestige Leaderboard eligibility (NFT chest + xFISH rewards) | Stake ~17,000 FISH for 12 months |
+
+Players below 200K Karma compete on the **Open Leaderboard**. Reaching 200K unlocks the **Prestige Leaderboard** with higher-tier rewards. The agent should encourage players to target Prestige tier.
 
 **Important: Karma scores update in-game at 2:00 AM UTC daily.** After staking FISH, the player's karma will NOT reflect the new stake until the next 2 AM UTC reset. Players must wait until after this reset before they become eligible for the xFISH karma wheel.
 
