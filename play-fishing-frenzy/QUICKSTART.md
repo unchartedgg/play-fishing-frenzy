@@ -18,7 +18,7 @@ Works with Claude Code, Cursor, Cline, Windsurf, OpenClaw, and any MCP-compatibl
 ## Install
 
 ```bash
-npx skills add wearedayone/play-fishing-frenzy --all --global -y && bash ~/.agents/skills/play-fishing-frenzy/scripts/setup.sh
+npx skills add unchartedgg/play-fishing-frenzy --all --global -y && bash ~/.agents/skills/play-fishing-frenzy/scripts/setup.sh
 ```
 
 This installs the skill, Python dependencies, and registers the MCP server for every detected AI tool.
@@ -29,7 +29,7 @@ Restart your AI tool. That's it.
 <summary>Alternative: clone manually</summary>
 
 ```bash
-git clone https://github.com/wearedayone/play-fishing-frenzy
+git clone https://github.com/unchartedgg/play-fishing-frenzy
 cd fishing-frenzy-agent
 bash scripts/setup.sh
 ```
@@ -150,6 +150,6 @@ pip3 install mcp[cli] httpx websockets eth-account
 
 If something breaks or feels wrong, file a bug report:
 
-**[Report a Bug](https://github.com/wearedayone/play-fishing-frenzy/issues/new?template=bug_report.yml)**
+**[Report a Bug](https://github.com/unchartedgg/play-fishing-frenzy/issues/new?template=bug_report.yml)**
 
 The form will ask for your AI tool, Python version, OS, and a description of what went wrong. Copy-paste the agent output if you can — it helps a lot.
